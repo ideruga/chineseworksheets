@@ -1,0 +1,153 @@
+<head>
+<script>
+ function round(a) {
+	return Math.round(a * 100) / 100
+ }
+</script>
+</head>
+<body>
+<input id="characters" type=text value="一二三四四五五六六七七八九九十"/>&nbsp&nbsp<input type=button onclick="generateDocument()" value="Generate"/>
+<pre id="latex_document" hidden="true">
+\documentclass{article}
+\usepackage{fontspec}
+\setmainfont{KanjiStrokeOrders_v4.001.ttf}
+%\usepackage{xeCJK}
+%\setCJKmainfont{SimSun}
+\usepackage[margin=1.5cm]{geometry}
+\usepackage{tikz}
+\usepackage{xstring}
+\usepackage{calc}
+\definecolor{mygray}{gray}{0.7}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\lfoot{\textcopyright Igor Deruga, 2017}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=-1cm]
+$body$
+\end{tikzpicture}
+
+\end{document}
+</pre>
+<br/>
+<textarea rows="1" cols="150" id="result_document" hidden=true></textarea>
+</body>
+<script>
+function generateDocument() {
+	var latexDocument = document.getElementById("latex_document").innerHTML
+	var characters = document.getElementById("characters").value
+	var BOX_WIDTH = 1.2
+	var MAX_WIDTH = 21.5 - 3
+	var columns = Math.floor(MAX_WIDTH/BOX_WIDTH)
+	console.debug(columns)
+	var body = ""
+	//Print characters
+	for (var i = 0; i < characters.length; i++) {
+		var c = characters.charAt(i)
+		var x = round(0.5*BOX_WIDTH)
+		var y = round((i - 0.5 + 1)*BOX_WIDTH)
+		body += "    \\node at (" + x + ", " + y + ") {\\Huge " + c + "};\n"
+		for (var j = 1; j <= 3; j++) {
+		  body += "    \\node[mygray] at (" + round(x + j*BOX_WIDTH) + ", " + y + ") {\\Huge " + c + "};\n"
+		}
+	}
+
+	var lineStyle = "thin,black"
+	//Print horizontal lines
+	for (var i = 0; i <= characters.length; i++) {
+		var x1 = 0
+		var y1 = round(i*BOX_WIDTH)
+		var x2 = round(columns*BOX_WIDTH)
+		var y2 = y1
+		body += "    \\draw[" + lineStyle + "] (" + x1 + ", " + y1 + ") -- (" + x2 + ", " + y2 + ");\n"
+	}
+
+	//Print vertical lines
+	for (var i = 0; i <= columns; i++) {
+		var x1 = round(i*BOX_WIDTH)
+		var y1 = 0
+		var x2 = x1
+		var y2 = round(characters.length*BOX_WIDTH)
+		body += "    \\draw[" + lineStyle + "] (" + x1 + ", " + y1 + ") -- (" + x2 + ", " + y2 + ");\n"
+	}
+
+	lineStyle = "very thin, dashed, gray"
+	//Print horizontal middle lines
+	for (var i = 0; i < characters.length; i++) {
+		var x1 = BOX_WIDTH
+		var y1 = round((i + 0.5)*BOX_WIDTH)
+		var x2 = round(columns*BOX_WIDTH)
+		var y2 = y1
+		body += "    \\draw[" + lineStyle + "] (" + x1 + ", " + y1 + ") -- (" + x2 + ", " + y2 + ");\n"
+	}
+
+	//Print vertical middle lines
+	for (var i = 1; i < columns; i++) {
+		var x1 = round((i + 0.5)*BOX_WIDTH)
+		var y1 = 0
+		var x2 = x1
+		var y2 = round(characters.length*BOX_WIDTH)
+		body += "    \\draw[" + lineStyle + "] (" + x1 + ", " + y1 + ") -- (" + x2 + ", " + y2 + ");\n"
+	}
+
+	lineStyle = "very thin, dotted, gray"
+	//Print diagonal lines
+	for (var i = 0; i < characters.length; i++) {
+		var x1 = BOX_WIDTH
+		var y1 = round(i*BOX_WIDTH)
+		
+		var delta = characters.length - i
+		
+		if (delta > columns-1) {
+			delta = columns-1
+		}
+		
+		var x2 = round((delta+1)*BOX_WIDTH)
+		var y2 = round((delta + i)*BOX_WIDTH)
+		
+		var x3 = x1
+		var y3 = round(characters.length*BOX_WIDTH - y1)
+		
+		var x4 = x2
+		var y4 = round(characters.length*BOX_WIDTH - y2)
+		body += "    \\draw[" + lineStyle + "] (" + x1 + ", " + y1 + ") -- (" + x2 + ", " + y2 + ");\n"
+		body += "    \\draw[" + lineStyle + "] (" + x3 + ", " + y3 + ") -- (" + x4 + ", " + y4 + ");\n"
+	}
+
+	//Print more diagonal lines
+	for (var i = 2; i < columns; i++) {
+		var x1 = round(i*BOX_WIDTH)
+		var y1 = 0
+		
+		var delta = columns - i + 1
+		if (delta > characters.length+1) {
+			delta = characters.length+1
+		}
+		
+		var x2 = round((delta + i - 1)*BOX_WIDTH)
+		var y2 = round((delta - 1)*BOX_WIDTH)
+		
+		var x3 = x1
+		var y3 = round(characters.length*BOX_WIDTH - y1)
+		
+		var x4 = x2
+		var y4 = round(characters.length*BOX_WIDTH - y2)
+		body += "    \\draw[" + lineStyle + "] (" + x1 + ", " + y1 + ") -- (" + x2 + ", " + y2 + ");\n"
+		body += "    \\draw[" + lineStyle + "] (" + x3 + ", " + y3 + ") -- (" + x4 + ", " + y4 + ");\n"
+	}
+	
+	body += "\footnotetext{footnote with two references}"
+	
+
+	var lines = body.split('\n').length;
+	document.getElementById("result_document").rows = lines
+	document.getElementById("result_document").value = latexDocument.replace("$body$", body)
+	document.getElementById("result_document").hidden = false;
+	var copyText = document.getElementById("result_document").select();
+	document.execCommand("Copy");
+	document.getElementById("result_document").hidden = true;
+}
+
+</script>
